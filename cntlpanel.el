@@ -12,16 +12,30 @@
   primary?
   mirrored
   mirror-src
+  disabled?
   offsetx
   offsety)
 
 (defvar xrandr-command "xrandr")
 (defvar pactl-command "pactl")
 
-(defcustom cntlpanel-refresh-rate 0.5
-  "In seconds.")
+(defgroup cntlpanel nil "Cntlpanel group.")
+
+(defcustom cntlpanel-refresh-rate 2
+  "Refresh rate of cntlpanel, in seconds."
+  :group 'cntlpanel)
+
 (defcustom cntlpanel-volume-step 0.02
-  "")
+  "Single step value for volume change, in decimal percentage."
+  :group 'cntlpanel)
+
+(defcustom cntlpanel-unmirror-default-action 'standalone
+  "Default action after a monitor been unmirrored.
+
+'STANDALONE: unmirror the monitor, keep it enable and work indepedently
+'DISABLE: disable the monitor"
+  :type '(symbol)
+  :options '(disable standalone))
 
 (defvar-local cntlpanel-mode nil)
 
@@ -45,14 +59,13 @@
    (group (* (or punct alnum)))
    " connected"
    (group (? " primary"))
-   " "
-   (*? digit)
-   "x"
-   (*? digit)
-   "+"
-   (group (*? digit))
-   "+"
-   (group (*? digit))
+   (? " " (*? digit)
+      "x"
+      (*? digit)
+      "+"
+      (group (*? digit))
+      "+"
+      (group (*? digit)))
    (* anychar)))
 
 (defvar cntlpanel--parse-xrandr-rx (cntlpanel--parse-xrandr-rx-gen))
@@ -93,32 +106,17 @@
                                     (monitor (make-cntlpanel--monitor
                                               :name name :id name :primary? (and (not (null primary))
                                                                                  (not (string-empty-p primary)))
-                                              :offsetx (string-to-number offsetx-str)
-                                              :offsety (string-to-number offsety-str))))
+                                              :offsetx (if offsetx-str
+                                                           (string-to-number offsetx-str) nil)
+                                              :offsety (if offsety-str
+                                                           (string-to-number offsety-str) nil)
+                                              :disabled? (null offsetx-str))))
                                (parse-monitors (cons monitor monitors)
                                                (cdr lines))))
                             (t
                              (parse-monitors monitors
                                              (cdr lines))))))))
       (parse-monitors nil lines))))
-
-(defun cntlpanel--disable-monitor (monitor)
-  ""
-  (cl-assert (cntlpanel--monitor-p monitor))
-  (if (cntlpanel--monitor-primary? monitor)
-      (error "Can't disable a primary monitor"))
-  (cntlpanel--async-process (list xrandr-command
-                                  "--output"
-                                  (cntlpanel--monitor-id monitor)
-                                  "--off")))
-
-(defun cntlpanel--enable-monitor (monitor)
-  ""
-  (cl-assert (cntlpanel--monitor-p monitor))
-  (cntlpanel--async-process (list xrandr-command
-                                  "--output"
-                                  (cntlpanel--monitor-id monitor)
-                                  "--auto")))
 
 (defun cntlpanel--get-primary-monitor (monitors)
   ""
@@ -169,7 +167,33 @@
   (setf (cntlpanel--monitor-mirrored dest-monitor) nil)
   (setf (cntlpanel--monitor-mirror-src dest-monitor) nil))
 
+(defun cntlpanel--disable-monitor (monitor)
+  ""
+  (cl-assert (cntlpanel--monitor-p monitor))
+  (if (cntlpanel--monitor-primary? monitor)
+      (error "Can't disable a primary monitor"))
+  (cntlpanel--async-process (list xrandr-command
+                                  "--output"
+                                  (cntlpanel--monitor-id monitor)
+                                  "--off")))
 
+(defun cntlpanel--enable-monitor (monitor)
+  ""
+  (cl-assert (cntlpanel--monitor-p monitor))
+  (cntlpanel--async-process (list xrandr-command
+                                  "--output"
+                                  (cntlpanel--monitor-id monitor)
+                                  "--auto")))
+
+(defun cntlpanel--enable-and-mirror (dest-monitor src-monitor)
+  ""
+  (cl-assert (cntlpanel--monitor-p dest-monitor))
+  (cl-assert (cntlpanel--monitor-p src-monitor))
+  (cntlpanel--async-process (list xrandr-command
+                                  "--output"
+                                  (cntlpanel--monitor-id dest-monitor)
+                                  "--auto"
+                                  "--same-as" (cntlpanel--monitor-id src-monitor))))
 
 (defun cntlpanel--monitors-control (monitors)
   ""
@@ -192,12 +216,18 @@
                  (text-field-not-mirrored "Mirror")
                  (widget-on-click (lambda (&rest _)
                                     (cond ((cntlpanel--monitor-mirrored monitor)
-                                           (cntlpanel--unmirror-monitor monitor
-                                                                        (cntlpanel--monitor-mirror-src monitor))
+                                           (if (equal cntlpanel-unmirror-default-action
+                                                      'disable)
+                                               (cntlpanel--disable-monitor monitor)
+                                             (cntlpanel--unmirror-monitor monitor
+                                                                          (cntlpanel--monitor-mirror-src monitor)))
                                            (widget-value-set widget text-field-not-mirrored))
                                           (t
-                                           (cntlpanel--mirror-monitor monitor
-                                                                      primary-monitor)
+                                           (if (equal cntlpanel-unmirror-default-action
+                                                      'disable)
+                                               (cntlpanel--enable-and-mirror monitor primary-monitor)
+                                             (cntlpanel--mirror-monitor monitor
+                                                                        primary-monitor))
                                            (widget-value-set widget text-field-mirrored)))))
                  (widget (widget-create
                           'push-button
