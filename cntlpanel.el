@@ -364,9 +364,6 @@
 
 (defvar-local cntlpanel--refresh-timer nil)
 
-(defvar-keymap cntlpanel-mode-map
-  :parent widget-keymap)
-
 (defvar cntlpanel-mode-map (make-composed-keymap
                             (define-keymap :parent widget-keymap)
                             magit-section-mode-map))
