@@ -4,6 +4,7 @@
 ;;; Code:
 (require 'wid-edit)
 (require 'widget)
+(require 'subr-x)
 (require 'cntlpanel-widgets)
 
 (cl-defstruct cntlpanel--monitor
