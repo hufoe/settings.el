@@ -5,6 +5,7 @@
 (require 'wid-edit)
 (require 'widget)
 (require 'subr-x)
+(require 'magit-section)
 (require 'cntlpanel-widgets)
 
 (cl-defstruct cntlpanel--monitor
@@ -39,6 +40,7 @@
   :options '(disable standalone))
 
 (defvar-local cntlpanel-mode nil)
+(defvar-local cntlpanel--updates nil)
 
 (defun cntlpanel--async-process (commands &optional callback)
   (let ((proc
@@ -196,48 +198,83 @@
                                   "--auto"
                                   "--same-as" (cntlpanel--monitor-id src-monitor))))
 
-(defun cntlpanel--monitors-control (monitors)
+(defun cntlpanel--widget-monitor-value-create (monitor-widget)
   ""
-  (let ((primary-monitor (cntlpanel--get-primary-monitor monitors))
-        (monitor-name-len (thread-last monitors
-                                       (cl-mapcar #'cntlpanel--monitor-name)
-                                       (cl-mapcar #'length)
-                                       (apply #'max)
-                                       (+ 2))))
-    (widget-insert (string-pad (cntlpanel--monitor-name primary-monitor)
-                               monitor-name-len))
-    (widget-insert (propertize "[Primary]"
-                               'face
-                               'bold))
-    (widget-insert "\n")
-    (dolist (monitor monitors)
-      (when (not (cntlpanel--monitor-primary? monitor))
-        (widget-insert (string-pad (cntlpanel--monitor-name monitor) monitor-name-len))
-        (letrec ((text-field-mirrored "Unmirror")
-                 (text-field-not-mirrored "Mirror")
-                 (widget-on-click (lambda (&rest _)
-                                    (cond ((cntlpanel--monitor-mirrored monitor)
-                                           (if (equal cntlpanel-unmirror-default-action
-                                                      'disable)
-                                               (cntlpanel--disable-monitor monitor)
-                                             (cntlpanel--unmirror-monitor monitor
-                                                                          (cntlpanel--monitor-mirror-src monitor)))
-                                           (widget-value-set widget text-field-not-mirrored))
-                                          (t
-                                           (if (equal cntlpanel-unmirror-default-action
-                                                      'disable)
-                                               (cntlpanel--enable-and-mirror monitor primary-monitor)
-                                             (cntlpanel--mirror-monitor monitor
-                                                                        primary-monitor))
-                                           (widget-value-set widget text-field-mirrored)))))
-                 (widget (widget-create
-                          'push-button
-                          :notify widget-on-click
-                          (propertize (if (cntlpanel--monitor-mirrored monitor)
-                                          text-field-mirrored
-                                        text-field-not-mirrored)
-                                      'face 'link)))))
-        (widget-insert "\n")))))
+  (let ((monitors (widget-get monitor-widget :value)))
+    (if (not monitors)
+        (widget-create-child-and-convert
+         monitor-widget
+         'item
+         :value
+         "")
+      (let ((primary-monitor (cntlpanel--get-primary-monitor monitors))
+            (monitor-name-len (thread-last monitors
+                                           (cl-mapcar #'cntlpanel--monitor-name)
+                                           (cl-mapcar #'length)
+                                           (apply #'max)
+                                           (+ 2))))
+        (widget-create-child-and-convert
+         monitor-widget
+         'item
+         :format "%v"
+         :value
+         (string-pad (cntlpanel--monitor-name primary-monitor)
+                     monitor-name-len))
+        (widget-create-child-and-convert
+         monitor-widget
+         'item
+         :format "%v\n"
+         :value
+         (propertize "[Primary]"
+                     'face
+                     'bold))
+
+        (dolist (monitor monitors)
+          (when (not (cntlpanel--monitor-primary? monitor))
+            (widget-create-child-and-convert
+             monitor-widget
+             'item
+             :format "%v"
+             :value
+             (string-pad (cntlpanel--monitor-name monitor) monitor-name-len))
+            (letrec ((text-field-mirrored "Unmirror")
+                     (text-field-not-mirrored "Mirror")
+                     (widget-on-click (lambda (&rest _)
+                                        (cond ((cntlpanel--monitor-mirrored monitor)
+                                               (if (equal cntlpanel-unmirror-default-action
+                                                          'disable)
+                                                   (cntlpanel--disable-monitor monitor)
+                                                 (cntlpanel--unmirror-monitor monitor
+                                                                              (cntlpanel--monitor-mirror-src monitor)))
+                                               (widget-value-set widget text-field-not-mirrored))
+                                              (t
+                                               (if (equal cntlpanel-unmirror-default-action
+                                                          'disable)
+                                                   (cntlpanel--enable-and-mirror monitor primary-monitor)
+                                                 (cntlpanel--mirror-monitor monitor
+                                                                            primary-monitor))
+                                               (widget-value-set widget text-field-mirrored)))))
+                     (widget (widget-create-child-and-convert
+                              monitor-widget
+                              'push-button
+                              :notify widget-on-click
+                              (propertize
+                               (if (cntlpanel--monitor-mirrored monitor)
+                                   text-field-mirrored
+                                 text-field-not-mirrored)
+                               'face 'link)))))
+            (widget-create-child-and-convert
+             monitor-widget
+	         'item
+             :value
+             "")))))))
+
+(define-widget 'cntlpanel--widget-monitor 'item
+  ""
+  :convert-widget #'widget-types-convert-widget
+  :copy #'widget-types-copy
+  :format "%v"
+  :value-create #'cntlpanel--widget-monitor-value-create)
 
 (cl-defstruct cntlpanel--sink
   name
@@ -266,17 +303,35 @@
                             (lambda (result)
                               (funcall callback (cntlpanel--parse-sinks-data result)))))
 
-(defun cntlpanel--volume-control (sinks)
+(defun cntlpanel--widget-volume-create (volume-widget)
   ""
-  (widget-insert "Volume Control")
-  (dolist (sink sinks)
-    (widget-insert (cntlpanel--sink-name sink))
-    (widget-insert "\n")
-    (widget-create 'cntlpanel-widget-slider
+  (let ((sinks (widget-get volume-widget :value)))
+    (if (not sinks)
+        (widget-create-child-and-convert
+                   volume-widget
+                   'item
+                   "123")
+        (dolist (sink sinks)
+                  (widget-create-child-and-convert
+                   volume-widget
+                   'item
+                   (cntlpanel--sink-name sink))
+
+                  (widget-create-child-and-convert
+                   volume-widget
+                   'cntlpanel-widget-slider
                    :percentage (cntlpanel--sink-volume sink)
-                   :length 20)))
+                   :length 20)))))
+
+(define-widget 'cntlpanel--widget-volume 'item
+  ""
+  :convert-widget #'widget-types-convert-widget
+  :copy #'widget-types-copy
+  :format "%v"
+  :value-create #'cntlpanel--widget-volume-create)
 
 (defun cntlpanel--set-volume (sink percentage)
+  ""
   (cl-assert (cntlpanel--sink-p sink))
   (cntlpanel--async-process (list pactl-command
                                   "set-sink-volume"
@@ -285,11 +340,17 @@
 
 (defvar-local cntlpanel--refresh-timer nil)
 
-(defvar-keymap cntlpanel-mode-map :parent widget-keymap)
+(defvar-keymap cntlpanel-mode-map
+  :parent widget-keymap)
 
-(define-derived-mode cntlpanel-mode special-mode "cntlpanel" ()
+(defvar cntlpanel-mode-map (make-composed-keymap
+                            (define-keymap :parent widget-keymap)
+                            magit-section-mode-map))
+
+(define-derived-mode cntlpanel-mode magit-section-mode "cntlpanel" ()
+  (setq-local cntlpanel-mode 1)
   (read-only-mode)
-  (use-local-map widget-keymap)
+  (use-local-map cntlpanel-mode-map)
   (letrec ((cntlpanel-buffer (current-buffer))
            (refresh-timer
             (run-with-timer 0 cntlpanel-refresh-rate
@@ -303,31 +364,86 @@
 (defun cntlpanel--refresh (cntlpanel-buffer)
   ""
   (with-current-buffer cntlpanel-buffer
-    (cntlpanel--list-monitors
-     (lambda (monitors)
-       (with-current-buffer cntlpanel-buffer
-         (cntlpanel--fetch-sinks-data
-          (lambda (sinks)
-            (with-current-buffer cntlpanel-buffer
-              (let ((current-point (point)))
-                (let ((inhibit-read-only t))
-                  (erase-buffer))
-                (widget-insert (propertize "Control Panel\n\n" 'face 'bold))
-                (widget-insert (propertize "Monitors:\n" 'face 'bold))
-                (cntlpanel--monitors-control monitors)
-                (widget-insert "\n")
-                (cntlpanel--volume-control sinks)
-                (goto-char current-point))))))))))
+    ;; We need to wait until all the data fetching is finished, then call all the callbacks at once
+    ;; to prevent flicking
+    (let* ((updates cntlpanel--updates)
+           (data-vector (make-vector (length updates) nil))
+           (cnt 0)
+           (call-updates (lambda ()
+                           (with-current-buffer cntlpanel-buffer
+                             (cl-loop for update in updates
+                                      for data across data-vector
+                                      do
+                                      (funcall (plist-get update :callback)
+                                               data))))))
+      (cl-loop for index from 0 below (length updates)
+               for update in updates
+               do
+               ;; cl-loop seems to work weridly with async callback
+               ;; local binding all the variable
+               (let* ((index index)
+                      (update update)
+                      (data-fetch (plist-get update :data-fetch)))
+                 (funcall data-fetch
+                          (lambda (data)
+                            (setf (aref data-vector index)
+                                  data)
+                            (setq cnt (+ cnt 1))
+                            (when (= cnt (length updates))
+                              (funcall call-updates)))))))))
+
+(cl-defstruct cntlpanel--section
+  widget
+  widget-header
+  value-fetch)
+
+(defun cntlpanel--register-update (data-fetch callback)
+  (add-to-list 'cntlpanel--updates (list :data-fetch data-fetch
+                                         :callback callback)))
+
+(defun cntlpanel--init (cntlpanel-buffer)
+  ""
+  (with-current-buffer cntlpanel-buffer
+    (let ((sections (list (make-cntlpanel--section :widget 'cntlpanel--widget-monitor
+                                                   :widget-header "Monitors:\n"
+                                                   :value-fetch #'cntlpanel--list-monitors)
+                          (make-cntlpanel--section :widget 'cntlpanel--widget-volume
+                                                   :widget-header "Audio Volulme: \n"
+                                                   :value-fetch #'cntlpanel--fetch-sinks-data)))
+          (current-point (point)))
+      (let ((inhibit-read-only t))
+        (widget-insert (propertize "Control Panel\n\n" 'face 'bold))
+
+        (magit-insert-section (magit-section "Root Section")
+          (dolist (section sections)
+            (magit-insert-section (magit-section (cntlpanel--section-widget-header section))
+
+              (magit-insert-heading (insert (propertize (cntlpanel--section-widget-header section)
+                                                        'face 'bold)))
+              (magit-insert-section-body
+                (insert "")
+                (let ((section-widget (widget-create (cntlpanel--section-widget section)
+                                                     :value
+                                                     nil)))
+                  (cntlpanel--register-update (cntlpanel--section-value-fetch section)
+                                              (lambda (data)
+                                                (widget-default-value-set section-widget
+                                                                          data)))
+                  section-widget)
+                ;; an extra "\n" seems to make magit-section work with async value set
+                (insert "\n")))))
+        (goto-char current-point)))))
 
 (defun cntlpanel ()
   ""
   (interactive)
   (let ((cntlpanel-buffer (get-buffer-create "*cntlpanel*")))
+    (pop-to-buffer cntlpanel-buffer)
     (with-current-buffer cntlpanel-buffer
       (unless cntlpanel-mode
-        (setq cntlpanel-mode 1)
-        (cntlpanel-mode))
-      (cntlpanel--refresh cntlpanel-buffer)
-      (pop-to-buffer cntlpanel-buffer))))
+        (setq-local cntlpanel-mode 1)
+        (cntlpanel-mode)
+        (cntlpanel--init cntlpanel-buffer)))))
 
 (provide 'cntlpanel)
+;;; cntlpanel.el ends here

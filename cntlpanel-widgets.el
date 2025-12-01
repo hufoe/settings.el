@@ -20,7 +20,11 @@
     (widget-create-child-and-convert widget 'item :value (cntlpanel--widget-slider-build-bar percentage length))))
 
 (define-widget 'cntlpanel-widget-slider 'default
-  "fd"
+  "A custom slider widget.
+
+Parameters:
+PERCENTAGE: percentage of slider bar filled, in decimal.
+LENGTH: length in characters."
   :convert-widget #'widget-types-convert-widget
   :copy #'widget-types-copy
   :format "%v"
