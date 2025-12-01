@@ -419,6 +419,11 @@
                             (define-keymap :parent widget-keymap)
                             magit-section-mode-map))
 
+(define-keymap :keymap cntlpanel-mode-map
+  "TAB" #'magit-section-toggle
+  "<tab>" #'magit-section-toggle
+  "C-t" #'magit-section-toggle)
+
 (define-derived-mode cntlpanel-mode magit-section-mode "cntlpanel" ()
   (setq-local cntlpanel-mode 1)
   (read-only-mode)
