@@ -276,6 +276,18 @@
   :format "%v"
   :value-create #'cntlpanel--widget-monitor-value-create)
 
+(defun cntlpanel--monitor-widget-available-check ()
+  (cond ((not (executable-find xrandr-command))
+         (list :cause (concat xrandr-command " isn't available")))
+        ((or
+          (not (null (getenv "WAYLAND_DISPLAY")))
+          (null (getenv "DISPLAY"))
+          (equal (getenv "XDG_SESSION_TYPE")
+                 "wayland"))
+         (list :cause "xrandr only works for w11"))
+        (t
+         t)))
+
 (cl-defstruct cntlpanel--sink
   name
   id
@@ -334,6 +346,13 @@
   :copy #'widget-types-copy
   :format "%v"
   :value-create #'cntlpanel--widget-volume-create)
+
+(defun cntlpanel--volume-widget-available-check ()
+  ""
+  (if (executable-find pactl-command)
+      t
+    (list :cause (concat pactl-command
+                         " isn't available"))))
 
 (defun cntlpanel--set-volume (sink percentage)
   ""
@@ -400,7 +419,8 @@
 (cl-defstruct cntlpanel--section
   widget
   widget-header
-  value-fetch)
+  value-fetch
+  avaiable-check)
 
 (defun cntlpanel--register-update (data-fetch callback)
   (add-to-list 'cntlpanel--updates (list :data-fetch data-fetch
@@ -411,32 +431,39 @@
   (with-current-buffer cntlpanel-buffer
     (let ((sections (list (make-cntlpanel--section :widget 'cntlpanel--widget-monitor
                                                    :widget-header "Monitors:\n"
-                                                   :value-fetch #'cntlpanel--list-monitors)
+                                                   :value-fetch #'cntlpanel--list-monitors
+                                                   :avaiable-check #'cntlpanel--monitor-widget-available-check)
                           (make-cntlpanel--section :widget 'cntlpanel--widget-volume
                                                    :widget-header "Audio Volulme: \n"
-                                                   :value-fetch #'cntlpanel--fetch-sinks-data)))
+                                                   :value-fetch #'cntlpanel--fetch-sinks-data
+                                                   :avaiable-check #'cntlpanel--volume-widget-available-check)))
           (current-point (point)))
       (let ((inhibit-read-only t))
         (widget-insert (propertize "Control Panel\n\n" 'face 'bold))
 
         (magit-insert-section (magit-section "Root Section")
           (dolist (section sections)
-            (magit-insert-section (magit-section (cntlpanel--section-widget-header section))
+            (let ((check (funcall (cntlpanel--section-avaiable-check section))))
+              (if (equal check t)
+                  (magit-insert-section (magit-section (cntlpanel--section-widget-header section))
 
-              (magit-insert-heading (insert (propertize (cntlpanel--section-widget-header section)
-                                                        'face 'bold)))
-              (magit-insert-section-body
-                (insert "")
-                (let ((section-widget (widget-create (cntlpanel--section-widget section)
-                                                     :value
-                                                     nil)))
-                  (cntlpanel--register-update (cntlpanel--section-value-fetch section)
-                                              (lambda (data)
-                                                (widget-default-value-set section-widget
-                                                                          data)))
-                  section-widget)
-                ;; an extra "\n" seems to make magit-section work with async value set
-                (insert "\n")))))
+                    (magit-insert-heading (insert (propertize (cntlpanel--section-widget-header section)
+                                                              'face 'bold)))
+                    (magit-insert-section-body
+                      (insert "")
+                      (let ((section-widget (widget-create (cntlpanel--section-widget section)
+                                                           :value
+                                                           nil)))
+                        (cntlpanel--register-update (cntlpanel--section-value-fetch section)
+                                                    (lambda (data)
+                                                      (widget-default-value-set section-widget
+                                                                                data)))
+                        section-widget)
+                      ;; an extra "\n" seems to make magit-section work with async value set
+                      (insert "\n")))
+                (message (concat "Warning: " (cntlpanel--section-widget-header section)
+                                 " isn't available, cause: "
+                                 " " (plist-get check :cause)))))))
         (goto-char current-point)))))
 
 (defun cntlpanel ()
