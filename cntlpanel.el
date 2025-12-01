@@ -87,7 +87,7 @@
                   (if (null lines)
                       (reverse monitors)
                     (let ((line (cl-first lines)))
-                      (cond ((string-match-p "^\t*EDID:\t*" line)
+                      (cond ((string-match-p "^[[:blank:]]*EDID:[[:blank:]]*" line)
                              (let ((monitor-readable-name
                                     (cntlpanel--edid-get-name
                                      (thread-last (cdr (take 17 lines))
