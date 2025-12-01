@@ -1,4 +1,4 @@
-;;; cntlpanel-widgets.el --- A lsp-bridge Flymake backend -*- lexical-binding: t -*-
+;;; cntlpanel-widgets.el --- Widgets for cntlpanel.el -*- lexical-binding: t -*-
 ;;; Commentary:
 
 ;;; Code:

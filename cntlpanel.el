@@ -1,4 +1,4 @@
-;;; cntlpanel.el --- A lsp-bridge Flymake backend -*- lexical-binding: t -*-
+;;; cntlpanel.el --- A simple Emacs GUI for managing system settings.  -*- lexical-binding: t -*-
 ;;; Commentary:
 
 ;;; Code:
