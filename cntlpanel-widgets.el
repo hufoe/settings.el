@@ -1,8 +1,8 @@
 ;;; cntlpanel-widgets.el --- Widgets for cntlpanel.el -*- lexical-binding: t -*-
 
 ;; SDPX-License-Identifier:  GPL-3.0-only
-;; SPDX-FileCopyrightText: (c) 2025 Hufoe
-;; SPDX-FileCopyrightText: (c) 2025 Antero Mejr
+;; SPDX-FileCopyrightText: (c) 2025 Hufoe <foss@hufoe.com>
+;; SPDX-FileCopyrightText: (c) 2025 Antero Mejr <mail@antr.me>
 
 ;;; Commentary:
 
