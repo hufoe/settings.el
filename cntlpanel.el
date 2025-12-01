@@ -344,32 +344,38 @@
                              ;; sinks data will be refetched after next refresh
                              ;; and the widgets will be re-rendered
                              ;; the following code is only for ui responsiveness
-                             (setf (cntlpanel--sink-muted? sink)
-                                   (not (cntlpanel--sink-muted? sink)))
-                             (widget-put volume-slider
-                                         :muted? (cntlpanel--sink-muted? sink))
-                             (widget-default-value-set volume-slider
-                                                       nil))
+                             (when (> cntlpanel-refresh-rate
+                                      0.5)
+                               (setf (cntlpanel--sink-muted? sink)
+                                     (not (cntlpanel--sink-muted? sink)))
+                               (widget-put volume-slider
+                                           :muted? (cntlpanel--sink-muted? sink))
+                               (widget-default-value-set volume-slider
+                                                         nil)))
                    :incr-volume (lambda (&rest _)
                                   (setf (cntlpanel--sink-volume sink)
                                         (+ (cntlpanel--sink-volume sink)
                                            cntlpanel-volume-step))
                                   (cntlpanel--set-volume sink (cntlpanel--sink-volume sink))
 
-                                  (widget-put volume-slider
-                                              :percentage (cntlpanel--sink-volume sink))
-                                  (widget-default-value-set volume-slider
-                                                            nil))
+                                  (when (> cntlpanel-refresh-rate
+                                           0.5)
+                                    (widget-put volume-slider
+                                                :percentage (cntlpanel--sink-volume sink))
+                                    (widget-default-value-set volume-slider
+                                                              nil)))
                    :dec-volume (lambda (&rest _)
                                  (setf (cntlpanel--sink-volume sink)
                                        (- (cntlpanel--sink-volume sink)
                                           cntlpanel-volume-step))
                                  (cntlpanel--set-volume sink (cntlpanel--sink-volume sink))
 
-                                 (widget-put volume-slider
-                                             :percentage (cntlpanel--sink-volume sink))
-                                 (widget-default-value-set volume-slider
-                                                           nil))))))
+                                 (when (> cntlpanel-refresh-rate
+                                          0.5)
+                                   (widget-put volume-slider
+                                               :percentage (cntlpanel--sink-volume sink))
+                                   (widget-default-value-set volume-slider
+                                                             nil)))))))
         (widget-create-child-and-convert
          volume-widget
          'item
@@ -406,6 +412,8 @@
                                   (concat (format "%.2f" (* 100 percentage)) "%"))))
 
 (defvar-local cntlpanel--refresh-timer nil)
+(defvar-local cntlpanel--refresh-tick 0)
+(defvar-local cntlpanel--refresh-succeed-tick 0)
 
 (defvar cntlpanel-mode-map (make-composed-keymap
                             (define-keymap :parent widget-keymap)
@@ -420,12 +428,13 @@
             (run-with-timer 0 cntlpanel-refresh-rate
                             (lambda ()
                               (if (buffer-live-p cntlpanel-buffer)
-                                  (cntlpanel--refresh cntlpanel-buffer)
+                                  (progn (cntlpanel--refresh cntlpanel-buffer cntlpanel--refresh-tick)
+                                         (setq-local cntlpanel--refresh-tick (+ 1 cntlpanel--refresh-tick)))
                                 (cancel-timer refresh-timer))))))
     (setq-local cntlpanel--refresh-timer
                 refresh-timer)))
 
-(defun cntlpanel--refresh (cntlpanel-buffer)
+(defun cntlpanel--refresh (cntlpanel-buffer refresh-tick)
   ""
   (with-current-buffer cntlpanel-buffer
     ;; We need to wait until all the data fetching is finished, then call all the callbacks at once
@@ -438,8 +447,10 @@
                              (cl-loop for update in updates
                                       for data across data-vector
                                       do
-                                      (funcall (plist-get update :callback)
-                                               data))))))
+                                      (progn
+                                        (setq-local cntlpanel--refresh-succeed-tick refresh-tick)
+                                        (funcall (plist-get update :callback)
+                                                 data)))))))
       (cl-loop for index from 0 below (length updates)
                for update in updates
                do
@@ -450,11 +461,13 @@
                       (data-fetch (plist-get update :data-fetch)))
                  (funcall data-fetch
                           (lambda (data)
-                            (setf (aref data-vector index)
-                                  data)
-                            (setq cnt (+ cnt 1))
-                            (when (= cnt (length updates))
-                              (funcall call-updates)))))))))
+                            (when (> refresh-tick
+                                     cntlpanel--refresh-succeed-tick)
+                              (setf (aref data-vector index)
+                                    data)
+                              (setq cnt (+ cnt 1))
+                              (when (= cnt (length updates))
+                                (funcall call-updates))))))))))
 
 (cl-defstruct cntlpanel--section
   widget
