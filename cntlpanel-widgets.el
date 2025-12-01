@@ -8,13 +8,31 @@
 (defvar cntlpanel-audio-muted-icon "🔇")
 (defvar cntlpanel-audio-icon "📢")
 
+(defvar cntlpanel--progress-bar-block '(" " "▏" "▎" "▍" "▌" "▋" "▊" "▉" "█"))
+
+(defun cntlpanel--widget-slider-get-block (decimal)
+  (let ((step (/ 1 (float (length cntlpanel--progress-bar-block)))))
+    (cl-loop
+     for block in cntlpanel--progress-bar-block
+     for base = 0 then (+ base step)
+     if (< (abs (- base decimal)) step) return block)))
+
 (defun cntlpanel--widget-slider-build-bar (percentage bar-length)
   (let ((slider-on-char ?█)
-        (slider-of-char ?_)
-        (on-chars (ceiling (* bar-length percentage))))
-    (concat (make-string on-chars slider-on-char)
-            (make-string (- bar-length on-chars)
-                         slider-of-char))))
+        (slider-off-char ? )
+        (chars-left (floor (* bar-length percentage)))
+        (chars-right (floor (* bar-length (- 1 percentage)))))
+
+    (concat
+     (make-string chars-left slider-on-char)
+     (if (= bar-length (+ chars-left chars-right))
+         ""
+       (cntlpanel--widget-slider-get-block (* (- percentage
+                                                 (/ (float chars-left)
+                                                    bar-length))
+                                              bar-length)))
+     (make-string chars-right
+                  slider-off-char))))
 
 (defun cntlpanel--widget-slider-value-create (widget)
   ""
