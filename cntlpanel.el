@@ -284,8 +284,11 @@
 
 (defvar-local cntlpanel--refresh-timer nil)
 
+(defvar-keymap cntlpanel-mode-map :parent widget-keymap)
+
 (define-derived-mode cntlpanel-mode special-mode "cntlpanel" ()
   (read-only-mode)
+  (use-local-map widget-keymap)
   (letrec ((cntlpanel-buffer (current-buffer))
            (refresh-timer
             (run-with-timer 0 cntlpanel-refresh-rate
