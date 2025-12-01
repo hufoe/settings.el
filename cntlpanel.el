@@ -413,7 +413,7 @@
 
 (defvar-local cntlpanel--refresh-timer nil)
 (defvar-local cntlpanel--refresh-tick 0)
-(defvar-local cntlpanel--refresh-succeed-tick 0)
+(defvar-local cntlpanel--refresh-succeed-tick -1)
 
 (defvar cntlpanel-mode-map (make-composed-keymap
                             (define-keymap :parent widget-keymap)
