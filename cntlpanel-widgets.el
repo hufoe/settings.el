@@ -38,10 +38,14 @@
   ""
   (let* ((percentage (widget-get widget :percentage))
          (bar-length (widget-get widget :length)))
-    (widget-create-child-and-convert
-     widget 'item
-     :format "%v"
-     :value (cntlpanel--widget-slider-build-bar percentage bar-length))))
+    (let ((bar-widget (widget-convert
+                       'item
+                       :format "%t"
+                       :tag (propertize (cntlpanel--widget-slider-build-bar percentage bar-length)
+                                        'font-lock-face
+                                        'widget-field))))
+      (widget-put bar-widget :parent widget)
+      (widget-create bar-widget))))
 
 (define-widget 'cntlpanel-widget-slider 'default
   "A custom slider widget.

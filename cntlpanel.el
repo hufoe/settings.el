@@ -236,8 +236,10 @@
              :format "%v"
              :value
              (string-pad (cntlpanel--monitor-name monitor) monitor-name-len))
-            (letrec ((text-field-mirrored "Unmirror")
-                     (text-field-not-mirrored "Mirror")
+            (letrec ((text-field-mirrored (propertize "Unmirror"
+                                                      'font-lock-face 'link))
+                     (text-field-not-mirrored (propertize "Mirror"
+                                                          'font-lock-face 'link))
                      (widget-on-click (lambda (&rest _)
                                         (cond ((cntlpanel--monitor-mirrored monitor)
                                                (if (equal cntlpanel-unmirror-default-action
@@ -350,8 +352,7 @@
                                      (not (cntlpanel--sink-muted? sink)))
                                (widget-put volume-slider
                                            :muted? (cntlpanel--sink-muted? sink))
-                               (widget-default-value-set volume-slider
-                                                         nil)))
+                               (widget-default-value-set volume-slider nil)))
                    :incr-volume (lambda (&rest _)
                                   (setf (cntlpanel--sink-volume sink)
                                         (+ (cntlpanel--sink-volume sink)
@@ -497,7 +498,7 @@
                                                    :avaiable-check #'cntlpanel--volume-widget-available-check)))
           (current-point (point)))
       (let ((inhibit-read-only t))
-        (widget-insert (propertize "Control Panel\n\n" 'face 'bold))
+        (widget-insert (propertize "Control Panel\n\n" 'font-lock-face 'bold))
 
         (magit-insert-section (magit-section "Root Section")
           (dolist (section sections)
@@ -506,7 +507,7 @@
                   (magit-insert-section (magit-section (cntlpanel--section-widget-header section))
 
                     (magit-insert-heading (insert (propertize (cntlpanel--section-widget-header section)
-                                                              'face 'bold)))
+                                                              'font-lock-face 'bold)))
                     (magit-insert-section-body
                       (insert "")
                       (let ((section-widget (widget-create (cntlpanel--section-widget section)
