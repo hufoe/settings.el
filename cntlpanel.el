@@ -308,20 +308,25 @@
   (let ((sinks (widget-get volume-widget :value)))
     (if (not sinks)
         (widget-create-child-and-convert
-                   volume-widget
-                   'item
-                   "123")
-        (dolist (sink sinks)
-                  (widget-create-child-and-convert
-                   volume-widget
-                   'item
-                   (cntlpanel--sink-name sink))
+         volume-widget
+         'item
+         "")
+      (dolist (sink sinks)
+        (widget-create-child-and-convert
+         volume-widget
+         'item
+         (cntlpanel--sink-name sink))
 
-                  (widget-create-child-and-convert
-                   volume-widget
-                   'cntlpanel-widget-slider
-                   :percentage (cntlpanel--sink-volume sink)
-                   :length 20)))))
+        (widget-create-child-and-convert
+         volume-widget
+         'cntlpanel-widget-volume-slider
+         :muted? nil
+         :percentage (cntlpanel--sink-volume sink)
+         :length 20)
+        (widget-create-child-and-convert
+         volume-widget
+         'item
+         "")))))
 
 (define-widget 'cntlpanel--widget-volume 'item
   ""
