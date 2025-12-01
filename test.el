@@ -1,4 +1,9 @@
 ;; -*- lexical-binding: t; -*-
+
+;; SDPX-License-Identifier:  GPL-3.0-only
+;; SPDX-FileCopyrightText: (c) 2025 Hufoe
+;; SPDX-FileCopyrightText: (c) 2025 Antero Mejr
+
 (require 'cntlpanel)
 (require 'ert)
 
@@ -9,24 +14,24 @@
 
 (ert-deftest test-edid-parse-xrandr ()
   (let ((xrandr-str "
-DP-2 connected primary 3840x2160+0+0 (normal left inverted right x axis y axis) 600mm x 340mm                                                                  
-        _KDE_SCREEN_INDEX: 1                                                   
-        EDID:                          
-                00ffffffffffff001e6dc25b00c90300                               
-                0a220104b53c2278fa40b5ae5142ad26                               
-                0f5054210800d1c06140010101010101                               
-                01010101010100d200a0f07050803020                               
-                350058542100001a000000fd00283c1e                               
-                873c000a202020202020000000fc004c                               
-                4720554c54524146494e450a000000ff                               
-                003431304e54414237413036340a0166                               
-                02031f72230907078301000044010304                               
-                10e2006ae305c000e6060501606050a3                               
-                6600a0f0701f80302035005854210000                               
-                1a565e00a0a0a0295030203500585421                                                                                                               
-                00001a023a801871382d40582c450058                               
-                542100001a0000000000000000000000                               
-                00000000000000000000000000000000                               
+DP-2 connected primary 3840x2160+0+0 (normal left inverted right x axis y axis) 600mm x 340mm
+        _KDE_SCREEN_INDEX: 1
+        EDID:
+                00ffffffffffff001e6dc25b00c90300
+                0a220104b53c2278fa40b5ae5142ad26
+                0f5054210800d1c06140010101010101
+                01010101010100d200a0f07050803020
+                350058542100001a000000fd00283c1e
+                873c000a202020202020000000fc004c
+                4720554c54524146494e450a000000ff
+                003431304e54414237413036340a0166
+                02031f72230907078301000044010304
+                10e2006ae305c000e6060501606050a3
+                6600a0f0701f80302035005854210000
+                1a565e00a0a0a0295030203500585421
+                00001a023a801871382d40582c450058
+                542100001a0000000000000000000000
+                00000000000000000000000000000000
                 00000000000000000000000000000033
 DP-3 connected (normal left inverted right x axis y axis)"))
     (let  ((monitors (cntlpanel--parse-xrandr xrandr-str)))

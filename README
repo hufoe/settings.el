@@ -1,0 +1,14 @@
+# -*- mode:org; -*-
+
+* Placeholder
+
+*Placeholder* is a simple Emacs GUI for managing system settings.
+
+It currently supports display mirroring and volume control on Linux systems with
+X11 and Pulseaudio.
+
+** Dependencies
+
+To manage system settings on Linux, the following programs must be installed:
+- =xrandr=: for monitors
+- =pactl= (part of =pulseaudio-utils=): for audio
