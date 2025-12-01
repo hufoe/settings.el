@@ -347,7 +347,7 @@
                              ;; and the widgets will be re-rendered
                              ;; the following code is only for ui responsiveness
                              (when (> cntlpanel-refresh-rate
-                                      0.5)
+                                      0.2)
                                (setf (cntlpanel--sink-muted? sink)
                                      (not (cntlpanel--sink-muted? sink)))
                                (widget-put volume-slider
@@ -360,7 +360,7 @@
                                   (cntlpanel--set-volume sink (cntlpanel--sink-volume sink))
 
                                   (when (> cntlpanel-refresh-rate
-                                           0.5)
+                                           0.2)
                                     (widget-put volume-slider
                                                 :percentage (cntlpanel--sink-volume sink))
                                     (widget-default-value-set volume-slider
@@ -372,7 +372,7 @@
                                  (cntlpanel--set-volume sink (cntlpanel--sink-volume sink))
 
                                  (when (> cntlpanel-refresh-rate
-                                          0.5)
+                                          0.2)
                                    (widget-put volume-slider
                                                :percentage (cntlpanel--sink-volume sink))
                                    (widget-default-value-set volume-slider
