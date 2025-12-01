@@ -73,7 +73,6 @@
 
 (defvar cntlpanel--parse-xrandr-rx (cntlpanel--parse-xrandr-rx-gen))
 
-
 (defun cntlpanel--edid-get-name (edid-str)
   (let ((_ (string-match (rx (*? anychar) "000000FC00" (group (= 24 alnum)) (* anychar)) edid-str)))
     (thread-last (seq-partition (match-string 1 edid-str) 2)
@@ -291,7 +290,8 @@
 (cl-defstruct cntlpanel--sink
   name
   id
-  volume)
+  volume
+  muted?)
 
 (defun cntlpanel--parse-sinks-data (json-str)
   ""
@@ -304,7 +304,9 @@
                               :volume (/ (float (thread-last (gethash "volume" sink-data)
                                                              (gethash "front-left")
                                                              (gethash "value")))
-                                         base-volume))))))
+                                         base-volume)
+                              :muted? (not (equal (gethash "mute" sink-data)
+                                                  :false)))))))
     (cl-map 'list
 			parse-sink-data
             sinks-data)))
@@ -329,12 +331,45 @@
          'item
          (cntlpanel--sink-name sink))
 
-        (widget-create-child-and-convert
-         volume-widget
-         'cntlpanel-widget-volume-slider
-         :muted? nil
-         :percentage (cntlpanel--sink-volume sink)
-         :length 20)
+        (letrec ((volume-slider
+                  (widget-create-child-and-convert
+                   volume-widget
+                   'cntlpanel-widget-volume-slider
+                   :muted? (cntlpanel--sink-muted? sink)
+                   :percentage (cntlpanel--sink-volume sink)
+                   :length 20
+                   :toggle (lambda (&rest _)
+                             (cntlpanel--toggle-volume sink)
+
+                             ;; sinks data will be refetched after next refresh
+                             ;; and the widgets will be re-rendered
+                             ;; the following code is only for ui responsiveness
+                             (setf (cntlpanel--sink-muted? sink)
+                                   (not (cntlpanel--sink-muted? sink)))
+                             (widget-put volume-slider
+                                         :muted? (cntlpanel--sink-muted? sink))
+                             (widget-default-value-set volume-slider
+                                                       nil))
+                   :incr-volume (lambda (&rest _)
+                                  (setf (cntlpanel--sink-volume sink)
+                                        (+ (cntlpanel--sink-volume sink)
+                                           cntlpanel-volume-step))
+                                  (cntlpanel--set-volume sink (cntlpanel--sink-volume sink))
+
+                                  (widget-put volume-slider
+                                              :percentage (cntlpanel--sink-volume sink))
+                                  (widget-default-value-set volume-slider
+                                                            nil))
+                   :dec-volume (lambda (&rest _)
+                                 (setf (cntlpanel--sink-volume sink)
+                                       (- (cntlpanel--sink-volume sink)
+                                          cntlpanel-volume-step))
+                                 (cntlpanel--set-volume sink (cntlpanel--sink-volume sink))
+
+                                 (widget-put volume-slider
+                                             :percentage (cntlpanel--sink-volume sink))
+                                 (widget-default-value-set volume-slider
+                                                           nil))))))
         (widget-create-child-and-convert
          volume-widget
          'item
@@ -353,6 +388,14 @@
       t
     (list :cause (concat pactl-command
                          " isn't available"))))
+
+(defun cntlpanel--toggle-volume (sink)
+  ""
+  (cl-assert (cntlpanel--sink-p sink))
+  (cntlpanel--async-process (list pactl-command
+                                  "set-sink-mute"
+                                  (cntlpanel--sink-id sink)
+                                  "toggle")))
 
 (defun cntlpanel--set-volume (sink percentage)
   ""

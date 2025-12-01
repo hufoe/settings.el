@@ -29,8 +29,8 @@
   "A custom slider widget.
 
 Parameters:
-PERCENTAGE: percentage of slider bar filled, in decimal.
-LENGTH: length in characters."
+:PERCENTAGE: percentage of slider bar filled, in decimal.
+:LENGTH: length in characters."
   :convert-widget #'widget-types-convert-widget
   :copy #'widget-types-copy
   :format "%v"
@@ -39,13 +39,16 @@ LENGTH: length in characters."
 (defun cntlpanel-widget--volumne-widget-value-create (widget)
   (let ((percentage (widget-get widget :percentage))
         (bar-length (widget-get widget :length))
-        (muted? (widget-get widget :muted?)))
+        (muted? (widget-get widget :muted?))
+        (toggle-callback (widget-get widget :toggle))
+        (incr-volume-callback (widget-get widget :incr-volume))
+        (dec-volume-callback (widget-get widget :dec-volume)))
 
     (let ((widget-push-button-prefix "")
           (widget-push-button-suffix ""))
       (widget-create-child-and-convert widget
                                        'push-button
-                                       :notify (lambda (&rest _))
+                                       :notify toggle-callback
                                        (if muted?
                                            cntlpanel-audio-muted-icon
                                          cntlpanel-audio-icon)))
@@ -55,7 +58,7 @@ LENGTH: length in characters."
                                      :value " ")
     (widget-create-child-and-convert widget
                                      'push-button
-                                     :notify (lambda (&rest _))
+                                     :notify dec-volume-callback
                                      "-")
     (widget-create-child-and-convert widget
                                      'cntlpanel-widget-slider
@@ -63,16 +66,19 @@ LENGTH: length in characters."
                                      :length bar-length)
     (widget-create-child-and-convert widget
                                      'push-button
-                                     :notify (lambda (&rest _))
+                                     :notify incr-volume-callback
                                      "+")))
 
 (define-widget 'cntlpanel-widget-volume-slider 'default
   "A custom slider widget.
 
 Parameters:
-PERCENTAGE: percentage of slider bar filled, in decimal.
-LENGTH: length in characters.
-MUTED: muted?"
+:percentage percentage of slider bar filled, in decimal.
+:length length in characters.
+:muted? muted?
+:toggle callback for toggle muted icon
+:incr-volume callback for volume increasing
+:dec-volume callback for volume decreasing"
   :convert-widget #'widget-types-convert-widget
   :copy #'widget-types-copy
   :format "%v"
