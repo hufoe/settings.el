@@ -71,7 +71,7 @@
 (defvar cntlpanel--parse-xrandr-rx (cntlpanel--parse-xrandr-rx-gen))
 
 
-(defun cntlpanel--parse-edid (edid-str)
+(defun cntlpanel--edid-get-name (edid-str)
   (let ((_ (string-match (rx (*? anychar) "000000FC00" (group (= 24 alnum)) (* anychar)) edid-str)))
     (thread-last (seq-partition (match-string 1 edid-str) 2)
                  (cl-mapcar (lambda (s)
@@ -89,7 +89,7 @@
                     (let ((line (cl-first lines)))
                       (cond ((string-match-p "^\t*EDID:\t*" line)
                              (let ((monitor-readable-name
-                                    (cntlpanel--parse-edid
+                                    (cntlpanel--edid-get-name
                                      (thread-last (cdr (take 17 lines))
                                                   (cl-mapcar (lambda (l)
                                                                (string-clean-whitespace l)))
