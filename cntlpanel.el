@@ -37,6 +37,10 @@
   "Single step value for volume change, in decimal percentage."
   :group 'cntlpanel)
 
+(defcustom cntlpanel-set-volume-warning-threshold 0.5
+  "Warning when you want to set volume above this level when clicking on the volume slider bar."
+  :group 'cntlpanel)
+
 (defcustom cntlpanel-unmirror-default-action 'standalone
   "Default action after a monitor been unmirrored.
 
@@ -341,7 +345,34 @@
          'item
          (cntlpanel--sink-name sink))
 
-        (letrec ((volume-slider
+        (letrec ((set-volume (lambda (slider sink volume inhibit-volume-set-warning)
+                               (let ((cntlpanel-buffer (current-buffer)))
+                                 (when (or
+                                        (< volume (max cntlpanel-set-volume-warning-threshold
+                                                       (cntlpanel--sink-volume sink)))
+                                        inhibit-volume-set-warning
+                                        (yes-or-no-p (format "Do you want to set volume at %d%%" (* volume 100))))
+
+                                   (cntlpanel--set-volume sink volume)
+
+                                   ;; sinks data will be refetched after next refresh
+                                   ;; and the widgets will be re-rendered
+                                   ;; the following code is only for ui responsiveness
+                                   (setf (cntlpanel--sink-volume sink)
+                                         volume)
+                                   (when (and (> cntlpanel-refresh-rate
+                                                 0.2)
+                                              (get-buffer-window cntlpanel-buffer))
+                                     ;; yes-or-no-p seems to cause `widget-default-value-set' not working properly
+                                     ;;   properly due to focus changing to the minibuffer
+                                     ;; The following `with-selected-widnow' and `with-selected-frame' fixes that
+                                     (with-selected-window (get-buffer-window cntlpanel-buffer)
+                                       (with-selected-frame (window-frame (get-buffer-window cntlpanel-buffer))
+                                         (widget-put slider
+                                                     :percentage (cntlpanel--sink-volume sink))
+                                         (widget-default-value-set slider
+                                                                   nil))))))))
+                 (volume-slider
                   (widget-create-child-and-convert
                    volume-widget
                    'cntlpanel-widget-volume-slider
@@ -350,10 +381,6 @@
                    :length 20
                    :toggle (lambda (&rest _)
                              (cntlpanel--toggle-volume sink)
-
-                             ;; sinks data will be refetched after next refresh
-                             ;; and the widgets will be re-rendered
-                             ;; the following code is only for ui responsiveness
                              (when (> cntlpanel-refresh-rate
                                       0.2)
                                (setf (cntlpanel--sink-muted? sink)
@@ -362,29 +389,25 @@
                                            :muted? (cntlpanel--sink-muted? sink))
                                (widget-default-value-set volume-slider nil)))
                    :incr-volume (lambda (&rest _)
-                                  (setf (cntlpanel--sink-volume sink)
-                                        (+ (cntlpanel--sink-volume sink)
-                                           cntlpanel-volume-step))
-                                  (cntlpanel--set-volume sink (cntlpanel--sink-volume sink))
-
-                                  (when (> cntlpanel-refresh-rate
-                                           0.2)
-                                    (widget-put volume-slider
-                                                :percentage (cntlpanel--sink-volume sink))
-                                    (widget-default-value-set volume-slider
-                                                              nil)))
+                                  (funcall set-volume
+                                           volume-slider
+                                           sink
+                                           (+ (cntlpanel--sink-volume sink)
+                                              cntlpanel-volume-step)
+                                           t))
                    :dec-volume (lambda (&rest _)
-                                 (setf (cntlpanel--sink-volume sink)
-                                       (- (cntlpanel--sink-volume sink)
-                                          cntlpanel-volume-step))
-                                 (cntlpanel--set-volume sink (cntlpanel--sink-volume sink))
-
-                                 (when (> cntlpanel-refresh-rate
-                                          0.2)
-                                   (widget-put volume-slider
-                                               :percentage (cntlpanel--sink-volume sink))
-                                   (widget-default-value-set volume-slider
-                                                             nil)))))))
+                                 (funcall set-volume
+                                          volume-slider
+                                          sink
+                                          (- (cntlpanel--sink-volume sink)
+                                             cntlpanel-volume-step)
+                                          t))
+                   :volume-bar-onclick (lambda (_ volume)
+                                         (funcall set-volume
+                                                  volume-slider
+                                                  sink
+                                                  volume
+                                                  nil))))))
         (widget-create-child-and-convert
          volume-widget
          'item
