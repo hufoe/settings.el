@@ -345,7 +345,7 @@
          'item
          (cntlpanel--sink-name sink))
 
-        (letrec ((set-volume (lambda (slider sink volume inhibit-volume-set-warning)
+        (letrec ((set-volume (lambda (sink volume inhibit-volume-set-warning)
                                (let ((cntlpanel-buffer (current-buffer)))
                                  (when (or
                                         (< volume (max cntlpanel-set-volume-warning-threshold
@@ -363,15 +363,16 @@
                                    (when (and (> cntlpanel-refresh-rate
                                                  0.2)
                                               (get-buffer-window cntlpanel-buffer))
-                                     ;; yes-or-no-p seems to cause `widget-default-value-set' not working properly
-                                     ;;   properly due to focus changing to the minibuffer
-                                     ;; The following `with-selected-widnow' and `with-selected-frame' fixes that
-                                     (with-selected-window (get-buffer-window cntlpanel-buffer)
-                                       (with-selected-frame (window-frame (get-buffer-window cntlpanel-buffer))
-                                         (widget-put slider
-                                                     :percentage (cntlpanel--sink-volume sink))
-                                         (widget-default-value-set slider
-                                                                   nil))))))))
+
+                                     ;; Due to the introduce of `yes-or-no-p', there is an interval
+                                     ;;    between this `set-volume' lambda got called and volume
+                                     ;;    setting logic executed.
+                                     ;; Thus, the widget we originally clicked on may already be gone
+                                     ;;    due to refreshing.
+                                     ;; Therefore, we redraw the whole volume widget instead of
+                                     ;;    the individual slider widget.
+                                     (widget-default-value-set volume-widget
+                                                               sinks))))))
                  (volume-slider
                   (widget-create-child-and-convert
                    volume-widget
@@ -390,21 +391,18 @@
                                (widget-default-value-set volume-slider nil)))
                    :incr-volume (lambda (&rest _)
                                   (funcall set-volume
-                                           volume-slider
                                            sink
                                            (+ (cntlpanel--sink-volume sink)
                                               cntlpanel-volume-step)
                                            t))
                    :dec-volume (lambda (&rest _)
                                  (funcall set-volume
-                                          volume-slider
                                           sink
                                           (- (cntlpanel--sink-volume sink)
                                              cntlpanel-volume-step)
                                           t))
                    :volume-bar-onclick (lambda (_ volume)
                                          (funcall set-volume
-                                                  volume-slider
                                                   sink
                                                   volume
                                                   nil))))))
