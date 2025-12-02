@@ -49,7 +49,7 @@
 
 (defun cntlpanel--async-process (commands &optional callback)
   (let ((proc
-         (make-process :name "xrandr" :command commands
+         (make-process :name "cntlpanel--async-process" :command commands
                        :buffer (generate-new-buffer (make-temp-name " cntl--async-process")))))
     (set-process-sentinel proc (lambda (_ _)
                                  (unless (process-live-p proc)
@@ -147,7 +147,7 @@
 (defun cntlpanel--list-monitors (callback)
   ""
   (cntlpanel--async-process
-   (list "xrandr" "--prop")
+   (list xrandr-command "--prop")
    (lambda (output)
      (let* ((monitors (cntlpanel--parse-xrandr output)))
        (cntlpanel--set-if-mirrored monitors)
@@ -159,7 +159,7 @@
   (cl-assert (cntlpanel--monitor-p dest-monitor))
   (cl-assert (cntlpanel--monitor-p src-monitor))
   (cntlpanel--async-process
-   (list "xrandr" "--output" (cntlpanel--monitor-id dest-monitor)
+   (list xrandr-command "--output" (cntlpanel--monitor-id dest-monitor)
          "--same-as" (cntlpanel--monitor-id src-monitor)))
   (setf (cntlpanel--monitor-mirrored dest-monitor) t)
   (setf (cntlpanel--monitor-mirror-src dest-monitor) src-monitor))
@@ -169,7 +169,7 @@
   (cl-assert (cntlpanel--monitor-p dest-monitor))
   (cl-assert (cntlpanel--monitor-p src-monitor))
   (cntlpanel--async-process
-   (list "xrandr" "--output" (cntlpanel--monitor-id dest-monitor)
+   (list xrandr-command "--output" (cntlpanel--monitor-id dest-monitor)
          "--left-of" (cntlpanel--monitor-id src-monitor)))
   (setf (cntlpanel--monitor-mirrored dest-monitor) nil)
   (setf (cntlpanel--monitor-mirror-src dest-monitor) nil))
@@ -320,7 +320,7 @@
 
 (defun cntlpanel--fetch-sinks-data (callback)
   ""
-  (cntlpanel--async-process '("pactl" "--format=json" "list" "sinks")
+  (cntlpanel--async-process (list pactl-command "--format=json" "list" "sinks")
                             (lambda (result)
                               (funcall callback (cntlpanel--parse-sinks-data result)))))
 
