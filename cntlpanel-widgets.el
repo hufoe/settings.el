@@ -77,7 +77,7 @@ Parameters:
   :format "%v"
   :value-create #'cntlpanel--widget-slider-value-create)
 
-(defun cntlpanel-widget--volumne-widget-value-create (widget)
+(defun cntlpanel-widget--volume-widget-value-create (widget)
   (let ((percentage (widget-get widget :percentage))
         (bar-length (widget-get widget :length))
         (muted? (widget-get widget :muted?))
@@ -127,7 +127,7 @@ Parameters:
   :convert-widget #'widget-types-convert-widget
   :copy #'widget-types-copy
   :format "%v"
-  :value-create #'cntlpanel-widget--volumne-widget-value-create)
+  :value-create #'cntlpanel-widget--volume-widget-value-create)
 
 (provide 'cntlpanel-widgets)
 ;;; cntlpanel-widgets.el ends here
