@@ -529,7 +529,7 @@
                                                    :value-fetch #'cntlpanel--list-monitors
                                                    :avaiable-check #'cntlpanel--monitor-widget-available-check)
                           (make-cntlpanel--section :widget 'cntlpanel--widget-volume
-                                                   :widget-header "Audio Volulme: \n"
+                                                   :widget-header "Audio Volume: \n"
                                                    :value-fetch #'cntlpanel--fetch-sinks-data
                                                    :avaiable-check #'cntlpanel--volume-widget-available-check)))
           (current-point (point)))
