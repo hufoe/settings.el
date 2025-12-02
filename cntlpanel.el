@@ -457,14 +457,21 @@
            (data-vector (make-vector (length updates) nil))
            (cnt 0)
            (call-updates (lambda ()
-                           (with-current-buffer cntlpanel-buffer
-                             (cl-loop for update in updates
-                                      for data across data-vector
-                                      do
-                                      (progn
-                                        (setq-local cntlpanel--refresh-succeed-tick refresh-tick)
-                                        (funcall (plist-get update :callback)
-                                                 data)))))))
+                           (cl-flet ((do-update ()
+                                       (with-current-buffer cntlpanel-buffer
+                                         (cl-loop for update in updates
+                                                  for data across data-vector
+                                                  do
+                                                  (progn
+                                                    (setq-local cntlpanel--refresh-succeed-tick refresh-tick)
+                                                    (funcall (plist-get update :callback)
+                                                             data))))))
+                             (if (and (get-buffer-window cntlpanel-buffer)
+                                      (window-frame (get-buffer-window cntlpanel-buffer)))
+                                 (with-selected-frame (window-frame (get-buffer-window cntlpanel-buffer))
+                                   (with-selected-window (get-buffer-window cntlpanel-buffer)
+                                     (do-update)))
+                               (do-update))))))
       (cl-loop for index from 0 below (length updates)
                for update in updates
                do
