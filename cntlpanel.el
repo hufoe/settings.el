@@ -520,6 +520,10 @@
                                                            nil)))
                         (cntlpanel--register-update (cntlpanel--section-value-fetch section)
                                                     (lambda (data)
+                                                      (save-excursion
+                                                        (goto-char (widget-get section-widget :from))
+                                                        (magit-section-maybe-update-visibility-indicator
+                                                         (magit-current-section)))
                                                       (widget-default-value-set section-widget
                                                                                 data)))
                         section-widget)
