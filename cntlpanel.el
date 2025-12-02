@@ -297,7 +297,7 @@
           (null (getenv "DISPLAY"))
           (equal (getenv "XDG_SESSION_TYPE")
                  "wayland"))
-         (list :cause "xrandr only works for w11"))
+         (list :cause "xrandr only works for X11"))
         (t
          t)))
 
