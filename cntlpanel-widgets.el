@@ -3,6 +3,7 @@
 ;; SDPX-License-Identifier:  GPL-3.0-only
 ;; SPDX-FileCopyrightText: (c) 2025 Hufoe <foss@hufoe.com>
 ;; SPDX-FileCopyrightText: (c) 2025 Antero Mejr <mail@antr.me>
+;; SPDX-FileContributor: 2025 Zephyr Yang <me@coruscation.net>
 
 ;;; Commentary:
 
