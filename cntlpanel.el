@@ -43,7 +43,9 @@
 'STANDALONE: unmirror the monitor, keep it enable and work indepedently
 'DISABLE: disable the monitor"
   :type '(symbol)
-  :options '(disable standalone))
+  :options '(disable standalone)
+  :group 'cntlpanel)
+
 
 (defvar-local cntlpanel-mode nil)
 (defvar-local cntlpanel--updates nil)
