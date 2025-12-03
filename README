@@ -1,11 +1,21 @@
 # -*- mode:org; -*-
 
-* Placeholder
+* settings.el - manage system settings in Emacs
 
-*Placeholder* is a simple Emacs GUI for managing system settings.
+*settings.el* is a simple Emacs UI for managing system settings. It provides
+a GUI (=M-x settings=) and a number of =M-x settings-= commands and variables.
 
-It currently supports display mirroring and volume control on Linux systems with
-X11 and Pulseaudio.
+It can currently be used to control:
+- display mirroring
+- audio volume and muting
+
+** Platform support matrix
+
+| OS      | Audio | Monitors |
+|---------+-------+----------|
+| Linux   | Y     | Y        |
+| MacOS   | Y     | N        |
+| Windows | N     | N        |
 
 ** Dependencies
 
