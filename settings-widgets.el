@@ -1,4 +1,4 @@
-;;; cntlpanel-widgets.el --- Widgets for cntlpanel.el -*- lexical-binding: t -*-
+;;; settings-widgets.el --- Widgets for settings.el -*- lexical-binding: t -*-
 
 ;; SDPX-License-Identifier:  GPL-3.0-only
 ;; SPDX-FileCopyrightText: (c) 2025 Hufoe <foss@hufoe.com>
@@ -11,19 +11,22 @@
 
 (require 'wid-edit)
 
-(defvar cntlpanel-audio-muted-icon "🔇")
-(defvar cntlpanel-audio-icon "📢")
+;; Customizable variables
 
-(defvar cntlpanel--progress-bar-block '(" " "▏" "▎" "▍" "▌" "▋" "▊" "▉" "█"))
+(defvar settings-audio-muted-icon "🔇")
+(defvar settings-audio-icon "📢")
+(defvar settings--progress-bar-block '(" " "▏" "▎" "▍" "▌" "▋" "▊" "▉" "█"))
 
-(defun cntlpanel--widget-slider-get-block (decimal)
-  (let ((step (/ 1 (float (length cntlpanel--progress-bar-block)))))
+;; Generic widgets
+
+(defun settings--widget-slider-get-block (decimal)
+  (let ((step (/ 1 (float (length settings--progress-bar-block)))))
     (cl-loop
-     for block in cntlpanel--progress-bar-block
+     for block in settings--progress-bar-block
      for base = 0 then (+ base step)
      if (< (abs (- base decimal)) step) return block)))
 
-(defun cntlpanel--widget-slider-build-bar (percentage bar-length)
+(defun settings--widget-slider-build-bar (percentage bar-length)
   (let ((slider-on-char ?█)
         (slider-off-char ? )
         (chars-left (floor (* bar-length percentage)))
@@ -33,15 +36,14 @@
      (make-string chars-left slider-on-char)
      (if (= bar-length (+ chars-left chars-right))
          ""
-       (cntlpanel--widget-slider-get-block (* (- percentage
+       (settings--widget-slider-get-block (* (- percentage
                                                  (/ (float chars-left)
                                                     bar-length))
                                               bar-length)))
      (make-string chars-right
                   slider-off-char))))
 
-(defun cntlpanel--widget-slider-value-create (widget)
-  ""
+(defun settings--widget-slider-value-create (widget)
   (let* ((percentage (widget-get widget :percentage))
          (bar-length (widget-get widget :length))
          (onclick (widget-get widget :onclick)))
@@ -60,11 +62,11 @@
                                                        (widget-get bar-widget :from))))
                                           bar-length))))
                           :value
-                          (propertize (cntlpanel--widget-slider-build-bar percentage bar-length)
+                          (propertize (settings--widget-slider-build-bar percentage bar-length)
                                       'font-lock-face
                                       'widget-field)))))))
 
-(define-widget 'cntlpanel-widget-slider 'default
+(define-widget 'settings-widget-slider 'default
   "A custom slider widget.
 
 Parameters:
@@ -75,9 +77,9 @@ Parameters:
   :convert-widget #'widget-types-convert-widget
   :copy #'widget-types-copy
   :format "%v"
-  :value-create #'cntlpanel--widget-slider-value-create)
+  :value-create #'settings--widget-slider-value-create)
 
-(defun cntlpanel-widget--volume-widget-value-create (widget)
+(defun settings-widget--volume-widget-value-create (widget)
   (let ((percentage (widget-get widget :percentage))
         (bar-length (widget-get widget :length))
         (muted? (widget-get widget :muted?))
@@ -92,8 +94,8 @@ Parameters:
                                        'push-button
                                        :notify toggle-callback
                                        (if muted?
-                                           cntlpanel-audio-muted-icon
-                                         cntlpanel-audio-icon)))
+                                           settings-audio-muted-icon
+                                         settings-audio-icon)))
     (widget-create-child-and-convert widget
                                      'item
                                      :format " "
@@ -103,7 +105,7 @@ Parameters:
                                      :notify dec-volume-callback
                                      "-")
     (widget-create-child-and-convert widget
-                                     'cntlpanel-widget-slider
+                                     'settings-widget-slider
                                      :percentage percentage
                                      :length bar-length
                                      :onclick volume-bar-onclick)
@@ -112,7 +114,9 @@ Parameters:
                                      :notify incr-volume-callback
                                      "+")))
 
-(define-widget 'cntlpanel-widget-volume-slider 'default
+;; Audio widgets.
+
+(define-widget 'settings-widget-volume-slider 'default
   "A custom slider widget.
 
 Parameters:
@@ -127,7 +131,24 @@ Parameters:
   :convert-widget #'widget-types-convert-widget
   :copy #'widget-types-copy
   :format "%v"
-  :value-create #'cntlpanel-widget--volume-widget-value-create)
+  :value-create #'settings-widget--volume-widget-value-create)
 
-(provide 'cntlpanel-widgets)
-;;; cntlpanel-widgets.el ends here
+(define-widget 'settings--widget-volume 'item
+  ""
+  :convert-widget #'widget-types-convert-widget
+  :copy #'widget-types-copy
+  :format "%v"
+  :value-create #'settings--widget-volume-create)
+
+;; Monitor-related widgets.
+
+(define-widget 'settings--widget-monitor 'item
+  ""
+  :convert-widget #'widget-types-convert-widget
+  :copy #'widget-types-copy
+  :format "%v"
+  :value-create #'settings--widget-monitor-value-create)
+
+(provide 'settings-widgets)
+
+;;; settings-widgets.el ends here
