@@ -4,7 +4,7 @@
 ;; Package-Version: 0.1.0
 ;; Package-Requires: ((emacs "27.1") (magit-section "4.4.2"))
 ;; Keywords: hardware convenience
-;; Homepage: https://hufoe.com/foss/settings-el
+;; Homepage: https://github.com/hufoe/settings.el
 
 ;; SDPX-License-Identifier:  GPL-3.0-only
 ;; SPDX-FileCopyrightText: (c) 2025 Hufoe <foss@hufoe.com>
@@ -193,6 +193,7 @@
     (setq-local settings--refresh-timer
                 refresh-timer)))
 
+;;;###autoload
 (defun settings ()
   "Launch the system settings management UI."
   (interactive)
