@@ -12,7 +12,6 @@
 ;; SPDX-FileContributor: 2025 Zephyr Yang <me@coruscation.net>
 
 ;;; Commentary:
-
 ;; This package provides a simple Emacs UI for managing system settings.
 
 ;;; Code:

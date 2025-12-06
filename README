@@ -3,36 +3,36 @@
 * settings.el - manage system settings in Emacs
 
 *settings.el* is a simple Emacs UI for managing system settings. It provides
-a GUI (=M-x settings=) and a number of =M-x settings-= commands and customizable
-variables.
+the =M-x settings= GUI control panel.
+# and a number of =M-x settings-= commands and customizable variables.
 
-It can currently be used to control:
+The current version can control:
 - display mirroring
 - audio volume and muting
-- network connections (WiFi)
+# - network connections (WiFi)
 
 ** Platform support matrix
 
-| OS      | Audio | Monitors | Networking |
-|---------+-------+----------+------------|
-| Linux   | Y     | Y        | Y          |
-| MacOS   | Y     | N        | Y          |
-| Windows | N     | N        | N          |
+| OS      | Audio | Monitors |
+|---------+-------+----------|
+| Linux   | Y     | Y        |
+| MacOS   | Y     | N        |
+| Windows | N     | N        |
 
-** Install
-
-*settings.el= is available on [[https://elpa.nongnu.org/][NonGNU ELPA]]. To install it with =use-package=,
-add this to your =.emacs= init file:
-
-#+begin_src emacs-lisp
-  (use-package settings :ensure t)
-#+end_src
-
-Then you can use the command =M-x settings= to start the GUI.
+# ** Install
+# 
+# *settings.el* is available on [[https://elpa.nongnu.org/][NonGNU ELPA]]. To install it with =use-package=, add
+# this to your =.emacs= init file:
+# 
+# #+begin_src emacs-lisp
+#   (use-package settings :ensure t)
+# #+end_src
+# 
+# Then you can use the command =M-x settings= to start the GUI.
 
 ** Dependencies
 
 To manage system settings on Linux, the following programs must be installed:
 - =xrandr=: for monitors
 - =pactl= (part of =pulseaudio-utils=): for audio
-- =nmcli=: for networking
+# - =nmcli=: for networking
