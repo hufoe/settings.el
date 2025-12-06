@@ -14,6 +14,30 @@
 
 ;; Customizable variables
 
+(defcustom settings-refresh-rate 2
+  "Refresh rate of the settings UI, in seconds."
+  :type 'natnum
+  :group 'settings)
+
+(defcustom settings-volume-step 0.02
+  "Single step value for volume change, in decimal percentage."
+  :type 'float
+  :group 'settings)
+
+(defcustom settings-set-volume-warning-threshold 1.0
+  "Warn when volume is set above this decimal percentage."
+  :type 'float
+  :group 'settings)
+
+(defcustom settings-unmirror-default-action 'standalone
+  "Default action after a monitor been unmirrored.
+
+standalone: unmirror the monitor, keep it enabled and working independently
+disable: disable the monitor"
+  :type 'symbol
+  :options '(disable standalone)
+  :group 'settings)
+
 (defvar settings-audio-muted-icon "🔇")
 (defvar settings-audio-icon "📢")
 (defvar settings--progress-bar-block '(" " "▏" "▎" "▍" "▌" "▋" "▊" "▉" "█"))
@@ -267,14 +291,14 @@ Parameters:
                                                           'disable)
                                                    (settings--disable-monitor monitor)
                                                  (settings--unmirror-monitor monitor
-                                                                              (settings--monitor-mirror-src monitor)))
+                                                                             (settings--monitor-mirror-src monitor)))
                                                (widget-value-set widget text-field-not-mirrored))
                                               (t
                                                (if (equal settings-unmirror-default-action
                                                           'disable)
                                                    (settings--enable-and-mirror monitor primary-monitor)
                                                  (settings--mirror-monitor monitor
-                                                                            primary-monitor))
+                                                                           primary-monitor))
                                                (widget-value-set widget text-field-mirrored)))))
                      (widget (widget-create-child-and-convert
                               monitor-widget
@@ -301,21 +325,18 @@ Parameters:
 
 (defun settings--widget-about-value-create (about-widget)
   (widget-create-child-and-convert
-         about-widget
-         'item
-         :format "%v"
-         :value
-         (format
-          (concat "Emacs version: %s\n"
-                  ;; TODO: Update each release
-                  "settings.el version: 0.1.0\n"
-                  "made by ")
-          emacs-version))
-  (insert-text-button
-   "Hufoe"
-   'action (lambda (_) (browse-url "https://hufoe.com"))
-   'follow-link t
-   'face 'link))
+    about-widget 'item
+    :format "%v"
+    :value (format (concat "Emacs version: %s\n"
+                     ;; TODO: Update each release
+                     "settings.el version: 0.1.0\n")
+             emacs-version))
+  (widget-create-child-and-convert
+    about-widget 'item
+    :format "made by %[Hufoe%]"
+    :button-face 'link
+    :help-echo "Go to hufoe.com"
+    :action (lambda (&rest _) (browse-url "https://hufoe.com"))))
 
 (define-widget 'settings--widget-about 'item
   ""

@@ -27,32 +27,9 @@
 
 ;; Custom variables
 
-(defgroup settings nil "Settings group.")
-
-(defvaralias 'settings-xrandr-command 'settings--xrandr-command)
-(defvaralias 'settings-pactl-command 'settings--pactl-command)
-(defvaralias 'settings-osascript-command 'settings--osascript-command)
-
-(defcustom settings-refresh-rate 2
-  "Refresh rate of the settings UI, in seconds."
-  :group 'settings)
-
-(defcustom settings-volume-step 0.02
-  "Single step value for volume change, in decimal percentage."
-  :group 'settings)
-
-(defcustom settings-set-volume-warning-threshold 1.0
-  "Warning when you want to set volume above this level when clicking on the volume slider bar."
-  :group 'settings)
-
-(defcustom settings-unmirror-default-action 'standalone
-  "Default action after a monitor been unmirrored.
-
-'STANDALONE: unmirror the monitor, keep it enabled and working independently
-'DISABLE: disable the monitor"
-  :type '(symbol)
-  :options '(disable standalone)
-  :group 'settings)
+(defgroup settings nil "Settings group."
+  :group 'applications
+  :prefix "settings-")
 
 ;; UI code
 
@@ -190,8 +167,7 @@
                                          (setq-local settings--refresh-tick
                                                      (+ 1 settings--refresh-tick)))
                                 (cancel-timer refresh-timer))))))
-    (setq-local settings--refresh-timer
-                refresh-timer)))
+    (setq-local settings--refresh-timer refresh-timer)))
 
 ;;;###autoload
 (defun settings ()

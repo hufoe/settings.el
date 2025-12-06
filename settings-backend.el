@@ -10,9 +10,9 @@
 
 ;; Custom variables
 
-(defvar settings--xrandr-command "xrandr")
-(defvar settings--pactl-command "pactl")
-(defvar settings--osascript-command "osascript")
+(defvar settings-xrandr-command "xrandr")
+(defvar settings-pactl-command "pactl")
+(defvar settings-osascript-command "osascript")
 
 ;; Interface code
 
@@ -34,13 +34,13 @@
 
 (defun settings--volume-widget-available-check ()
   (cond ((eq system-type 'darwin)
-         (if (executable-find settings--osascript-command)
+         (if (executable-find settings-osascript-command)
              t
-           (list :cause (concat settings--osascript-command " isn't available"))))
+           (list :cause (concat settings-osascript-command " isn't available"))))
         ((eq system-type 'gnu/linux)
-         (if (executable-find settings--pactl-command)
+         (if (executable-find settings-pactl-command)
              t
-           (list :cause (concat settings--pactl-command " isn't available"))))
+           (list :cause (concat settings-pactl-command " isn't available"))))
         (t (list :cause "unsupported platform"))))
 
 (cl-defstruct settings--sink
@@ -68,7 +68,7 @@
   "output volume:\\([[:digit:]]+\\), .*, alert volume:\\([[:digit:]]+\\), output muted:\\(.*\\)$")
 
 (defun settings--parse-sinks-data-darwin (str)
-  (let* ((matches (string-match settings--osascript-rx str))
+  (let* ((_ (string-match settings--osascript-rx str))
          (outvol (/ (string-to-number (match-string 1 str)) 100.0))
          (muted (match-string 3 str))
          (muted (string= muted "true")))
@@ -76,12 +76,12 @@
 
 (defun settings--fetch-sinks-data (callback)
   (cond ((eq system-type 'darwin)
-         (settings--async-process (list settings--osascript-command
+         (settings--async-process (list settings-osascript-command
                                         "-e" "get volume settings")
                                   (lambda (result)
                                     (funcall callback (settings--parse-sinks-data-darwin result)))))
         ((eq system-type 'gnu/linux)
-         (settings--async-process (list settings--pactl-command "--format=json" "list" "sinks")
+         (settings--async-process (list settings-pactl-command "--format=json" "list" "sinks")
                                   (lambda (result)
                                     (funcall callback (settings--parse-sinks-data result)))))))
 
@@ -89,12 +89,12 @@
   (cl-assert (settings--sink-p sink))
   (cond ((eq system-type 'darwin)
          (if (settings--sink-muted? sink)
-             (settings--async-process (list settings--osascript-command
+             (settings--async-process (list settings-osascript-command
                                             "-e" "set volume output muted no"))
-           (settings--async-process (list settings--osascript-command
+           (settings--async-process (list settings-osascript-command
                                           "-e" "set volume output muted yes"))))
         ((eq system-type 'gnu/linux)
-         (settings--async-process (list settings--pactl-command
+         (settings--async-process (list settings-pactl-command
                                         "set-sink-mute"
                                         (settings--sink-id sink)
                                         "toggle")))))
@@ -105,7 +105,7 @@
          ;; NOTE: MacOS disables mute after a volume adjustment. That behavior
          ;; does not seem to be controllable by re-muting the output. Maybe
          ;; MacOS disables muting for some amount of time after settings volume?
-         (settings--async-process (list settings--osascript-command
+         (settings--async-process (list settings-osascript-command
                                         "-e" (format "set volume output volume %i"
                                                      (* 100 percentage)))))
         ((eq system-type 'gnu/linux)
@@ -192,7 +192,7 @@
 
 (defun settings--monitor-widget-available-check ()
   (cond ((not (executable-find settings-xrandr-command))
-         (list :cause (concat settings--xrandr-command " isn't available")))
+         (list :cause (concat settings-xrandr-command " isn't available")))
         ((or
           (not (null (getenv "WAYLAND_DISPLAY")))
           (null (getenv "DISPLAY"))
