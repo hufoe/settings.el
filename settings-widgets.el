@@ -79,6 +79,8 @@ Parameters:
   :format "%v"
   :value-create #'settings--widget-slider-value-create)
 
+;; Audio widgets.
+
 (defun settings-widget--volume-widget-value-create (widget)
   (let ((percentage (widget-get widget :percentage))
         (bar-length (widget-get widget :length))
@@ -114,8 +116,6 @@ Parameters:
                                      :notify incr-volume-callback
                                      "+")))
 
-;; Audio widgets.
-
 (define-widget 'settings-widget-volume-slider 'default
   "A custom slider widget.
 
@@ -133,6 +133,82 @@ Parameters:
   :format "%v"
   :value-create #'settings-widget--volume-widget-value-create)
 
+(defun settings--widget-volume-create (volume-widget)
+  (let ((sinks (widget-get volume-widget :value)))
+    (if (not sinks)
+        (widget-create-child-and-convert
+         volume-widget
+         'item
+         "")
+      (dolist (sink sinks)
+        (widget-create-child-and-convert
+         volume-widget
+         'item
+         (settings--sink-name sink))
+
+        (letrec ((set-volume (lambda (sink volume inhibit-volume-set-warning)
+                               (let ((settings-buffer (current-buffer)))
+                                 (when (or
+                                        (< volume (max settings-set-volume-warning-threshold
+                                                       (settings--sink-volume sink)))
+                                        inhibit-volume-set-warning
+                                        (yes-or-no-p (format "Do you want to set volume at %d%%" (* volume 100))))
+
+                                   (settings--set-volume sink volume)
+
+                                   ;; sinks data will be refetched after next refresh
+                                   ;; and the widgets will be re-rendered
+                                   ;; the following code is only for ui responsiveness
+                                   (setf (settings--sink-volume sink) volume)
+                                   (when (and (> settings-refresh-rate 0.2)
+                                              (get-buffer-window settings-buffer))
+
+                                     ;; Due to the introduce of `yes-or-no-p', there is an interval
+                                     ;;    between this `set-volume' lambda got called and volume
+                                     ;;    setting logic executed.
+                                     ;; Thus, the widget we originally clicked on may already be gone
+                                     ;;    due to refreshing.
+                                     ;; Therefore, we redraw the whole volume widget instead of
+                                     ;;    the individual slider widget.
+                                     (widget-default-value-set volume-widget sinks))))))
+                 (volume-slider
+                  (widget-create-child-and-convert
+                   volume-widget
+                   'settings-widget-volume-slider
+                   :muted? (settings--sink-muted? sink)
+                   :percentage (settings--sink-volume sink)
+                   :length 20
+                   :toggle (lambda (&rest _)
+                             (settings--toggle-volume sink)
+                             (when (> settings-refresh-rate
+                                      0.2)
+                               (setf (settings--sink-muted? sink)
+                                     (not (settings--sink-muted? sink)))
+                               (widget-put volume-slider
+                                           :muted? (settings--sink-muted? sink))
+                               (widget-default-value-set volume-slider nil)))
+                   :incr-volume (lambda (&rest _)
+                                  (funcall set-volume
+                                           sink
+                                           (+ (settings--sink-volume sink)
+                                              settings-volume-step)
+                                           t))
+                   :dec-volume (lambda (&rest _)
+                                 (funcall set-volume
+                                          sink
+                                          (- (settings--sink-volume sink)
+                                             settings-volume-step)
+                                          t))
+                   :volume-bar-onclick (lambda (_ volume)
+                                         (funcall set-volume
+                                                  sink
+                                                  volume
+                                                  nil))))))
+        (widget-create-child-and-convert
+         volume-widget
+         'item
+         "")))))
+
 (define-widget 'settings--widget-volume 'item
   ""
   :convert-widget #'widget-types-convert-widget
@@ -142,12 +218,110 @@ Parameters:
 
 ;; Monitor-related widgets.
 
+(defun settings--widget-monitor-value-create (monitor-widget)
+  (let ((monitors (widget-get monitor-widget :value)))
+    (if (not monitors)
+        (widget-create-child-and-convert
+         monitor-widget
+         'item
+         :value
+         "")
+      (let ((primary-monitor (settings--get-primary-monitor monitors))
+            (monitor-name-len (thread-last monitors
+                                           (cl-mapcar #'settings--monitor-name)
+                                           (cl-mapcar #'length)
+                                           (apply #'max)
+                                           (+ 2))))
+        (widget-create-child-and-convert
+         monitor-widget
+         'item
+         :format "%v"
+         :value
+         (string-pad (settings--monitor-name primary-monitor)
+                     monitor-name-len))
+        (widget-create-child-and-convert
+         monitor-widget
+         'item
+         :format "%v\n"
+         :value
+         (propertize "[Primary]"
+                     'face
+                     'bold))
+
+        (dolist (monitor monitors)
+          (when (not (settings--monitor-primary? monitor))
+            (widget-create-child-and-convert
+             monitor-widget
+             'item
+             :format "%v"
+             :value
+             (string-pad (settings--monitor-name monitor) monitor-name-len))
+            (letrec ((text-field-mirrored (propertize "Unmirror"
+                                                      'font-lock-face 'link))
+                     (text-field-not-mirrored (propertize "Mirror"
+                                                          'font-lock-face 'link))
+                     (widget-on-click (lambda (&rest _)
+                                        (cond ((settings--monitor-mirrored monitor)
+                                               (if (equal settings-unmirror-default-action
+                                                          'disable)
+                                                   (settings--disable-monitor monitor)
+                                                 (settings--unmirror-monitor monitor
+                                                                              (settings--monitor-mirror-src monitor)))
+                                               (widget-value-set widget text-field-not-mirrored))
+                                              (t
+                                               (if (equal settings-unmirror-default-action
+                                                          'disable)
+                                                   (settings--enable-and-mirror monitor primary-monitor)
+                                                 (settings--mirror-monitor monitor
+                                                                            primary-monitor))
+                                               (widget-value-set widget text-field-mirrored)))))
+                     (widget (widget-create-child-and-convert
+                              monitor-widget
+                              'push-button
+                              :notify widget-on-click
+                              (propertize
+                               (if (settings--monitor-mirrored monitor)
+                                   text-field-mirrored
+                                 text-field-not-mirrored)
+                               'face 'link)))))
+            (widget-create-child-and-convert
+             monitor-widget
+	     'item
+             :value "")))))))
+
 (define-widget 'settings--widget-monitor 'item
   ""
   :convert-widget #'widget-types-convert-widget
   :copy #'widget-types-copy
   :format "%v"
   :value-create #'settings--widget-monitor-value-create)
+
+;; About widget.
+
+(defun settings--widget-about-value-create (about-widget)
+  (widget-create-child-and-convert
+         about-widget
+         'item
+         :format "%v"
+         :value
+         (format
+          (concat "Emacs version: %s\n"
+                  ;; TODO: Update each release
+                  "settings.el version: 0.1.0\n"
+                  "made by ")
+          emacs-version))
+  (insert-text-button
+   "Hufoe"
+   'action (lambda (_) (browse-url "https://hufoe.com"))
+   'follow-link t
+   'face 'link))
+
+(define-widget 'settings--widget-about 'item
+  ""
+  :convert-widget #'widget-types-convert-widget
+  :copy #'widget-types-copy
+  :format "%v"
+  :value-create #'settings--widget-about-value-create)
 
 (provide 'settings-widgets)
 

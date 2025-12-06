@@ -104,6 +104,9 @@
 (defun settings--set-volume (sink percentage)
   (cl-assert (settings--sink-p sink))
   (cond ((eq system-type 'darwin)
+         ;; NOTE: MacOS disables mute after a volume adjustment. That behavior
+         ;; does not seem to be controllable by re-muting the output. Maybe
+         ;; MacOS disables muting for some amount of time after settings volume?
          (settings--async-process (list settings--osascript-command
                                         "-e" (format "set volume output volume %i"
                                                      (* 100 percentage)))))
@@ -198,8 +201,21 @@
           (equal (getenv "XDG_SESSION_TYPE")
                  "wayland"))
          (list :cause "xrandr only works for X11"))
-        (t
-         t)))
+        (t t)))
+
+(defun settings--set-if-mirrored (monitors)
+  (let ((primary-monitor (settings--get-primary-monitor monitors)))
+    (dolist (monitor monitors)
+      (when (and
+             (not (settings--monitor-primary? monitor))
+             (equal (settings--monitor-offsetx primary-monitor)
+                    (settings--monitor-offsetx monitor))
+             (equal (settings--monitor-offsety primary-monitor)
+                    (settings--monitor-offsety monitor)))
+        (setf (settings--monitor-mirrored monitor)
+              t)
+        (setf (settings--monitor-mirror-src monitor)
+              primary-monitor)))))
 
 (defun settings--list-monitors (callback)
   (settings--async-process
@@ -207,8 +223,7 @@
    (lambda (output)
      (let* ((monitors (settings--parse-xrandr output)))
        (settings--set-if-mirrored monitors)
-       (funcall callback
-                monitors)))))
+       (funcall callback monitors)))))
 
 (defun settings--mirror-monitor (dest-monitor src-monitor)
   (cl-assert (settings--monitor-p dest-monitor))
