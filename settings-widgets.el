@@ -10,6 +10,7 @@
 ;;; Code:
 
 (require 'wid-edit)
+(require 'settings-backend)
 
 ;; Customizable variables
 

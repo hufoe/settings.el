@@ -1,0 +1,32 @@
+# -*- mode:org; -*-
+
+* Feature schedule (may change)
+
+** 0.2.x
+
+- Network control panel (enwc dependency?)
+- Equivalent =M-x settings-*= interactive functions for GUI controls
+
+** 0.3.x
+
+- Emacs package UI (list/uninstall)
+
+** 0.4.x
+
+- Faces and icon styles
+
+** 0.5.x
+
+- Audio output devices
+
+** not yet scheduled
+
+- Wayland monitor control backend
+  + how to do this in a WM-agnostic way?
+
+* Bugs, refactors, etc.
+
+- Async/UI responsivity refactor
+- Add control of non-default audio devices on Darwin (MacOS)
+- Make struct interface containing functions for each widget type
+  + Each platform/backend gets a struct

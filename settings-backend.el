@@ -6,8 +6,6 @@
 
 ;;; Commentary:
 
-;; TODO: Add control of non-default audio devices on Darwin (MacOS)
-
 ;;; Code:
 
 ;; Custom variables
