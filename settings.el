@@ -1,7 +1,7 @@
 ;;; settings.el --- A simple Emacs GUI for managing system settings.  -*- lexical-binding: t -*-
 
 ;; Author: Hufoe <foss@hufoe.com>
-;; Package-Version: 0.1.0
+;; Package-Version: 0.1.2
 ;; Package-Requires: ((emacs "27.1") (magit-section "4.4.2"))
 ;; Keywords: hardware convenience
 ;; Homepage: https://github.com/hufoe/settings.el

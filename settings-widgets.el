@@ -328,9 +328,13 @@ Parameters:
     about-widget 'item
     :format "%v"
     :value (format (concat "Emacs version: %s\n"
-                     ;; TODO: Update each release
-                     "settings.el version: 0.1.0\n")
-             emacs-version))
+                     "settings.el version: %s\n")
+             emacs-version
+             (let ((p (assq 'settings package-alist)))
+               (if p
+                   (let ((ver (package-desc-version (cadr p))))
+                     (apply 'format "%s.%s.%s" ver))
+                 "unknown"))))
   (widget-create-child-and-convert
     about-widget 'item
     :format "made by %[Hufoe%]"

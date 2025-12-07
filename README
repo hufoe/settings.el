@@ -5,7 +5,6 @@
 *settings.el* is a simple Emacs UI for managing system settings. It provides the
 =M-x settings= GUI control panel. The interface consists of folding sections
 that are visually inspired by Org-mode and Magit.
-# and a number of =M-x settings-= commands and customizable variables.
 
 The latest release can control:
 - display mirroring
@@ -20,16 +19,21 @@ The latest release can control:
 | MacOS   | Y     | N        |
 | Windows | N     | N        |
 
-# ** Install
-# 
-# *settings.el* is available on [[https://elpa.nongnu.org/][NonGNU ELPA]]. To install it with =use-package=, add
-# this to your =.emacs= init file:
-# 
-# #+begin_src emacs-lisp
-#   (use-package settings :ensure t)
-# #+end_src
-# 
-# Then you can use the command =M-x settings= to start the GUI.
+** Install
+
+You can install the latest version using =M-x package-vc-install=, available in
+Emacs 30.1 or later.
+
+#+begin_example
+  M-x package-vc-install RET https://github.com/hufoe/settings.el
+#+end_example
+
+Or add this to your =.emacs=:
+#+begin_src emacs-lisp
+    (use-package settings :vc (:url "https://github.com/hufoe/settings.el"))
+#+end_src
+
+Then run the command =M-x settings= to start the GUI.
 
 ** Dependencies
 
