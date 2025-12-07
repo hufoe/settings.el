@@ -23,6 +23,7 @@
 
 - Wayland monitor control backend
   + how to do this in a WM-agnostic way?
+- Mouse/trackpad speed
 
 * Bugs, refactors, etc.
 
