@@ -24,6 +24,7 @@
 - Wayland monitor control backend
   + how to do this in a WM-agnostic way?
 - Mouse/trackpad speed
+- ALSA (amixer) audio backend
 
 * Bugs, refactors, etc.
 
