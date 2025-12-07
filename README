@@ -2,11 +2,12 @@
 
 * settings.el - manage system settings in Emacs
 
-*settings.el* is a simple Emacs UI for managing system settings. It provides
-the =M-x settings= GUI control panel.
+*settings.el* is a simple Emacs UI for managing system settings. It provides the
+=M-x settings= GUI control panel. The interface consists of folding sections
+that are visually inspired by Org-mode and Magit.
 # and a number of =M-x settings-= commands and customizable variables.
 
-The current version can control:
+The latest release can control:
 - display mirroring
 - audio volume and muting
 # - network connections (WiFi)
